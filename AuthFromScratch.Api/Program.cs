@@ -7,7 +7,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastrcture();
+builder.Services.AddInfrastrcture(builder.Configuration);
 
 var app = builder.Build();
 

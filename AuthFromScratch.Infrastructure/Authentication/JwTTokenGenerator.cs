@@ -3,15 +3,28 @@ using AuthFromScratch.Application.Common.Interfaces.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using AuthFromScratch.Application.Common.Interfaces.Services;
+using Microsoft.Extensions.Options;
 
 namespace AuthFromScratch.Infrastructure.Authentication;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
+    private readonly JwtSettings _jwtSettings;
+    private readonly IDateTimeProvider _dateTimeProvider;
+
+    public JwtTokenGenerator(
+        IDateTimeProvider dateTimeProvider,
+        IOptions<JwtSettings> jwtSettings)
+    {
+        _dateTimeProvider = dateTimeProvider;
+        _jwtSettings = jwtSettings.Value;
+    }
+
     public string GenerateToken(Guid id, string firstName, string lastName)
     {
         var signingCredentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes("super-secret-key-that-is-at-least-32-characters-long")),
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret)),
             SecurityAlgorithms.HmacSha256
         );
 
@@ -25,8 +38,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         };
 
         var securityToken = new JwtSecurityToken(
-            issuer: "AuthFromScratch",
-            expires: DateTime.Now.AddDays(1),
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
             claims: claims,
             signingCredentials: signingCredentials
         );
