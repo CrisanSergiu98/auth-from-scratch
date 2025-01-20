@@ -1,5 +1,5 @@
 using AuthFromScratch.Application;
-using AuthFromScratch.Errors;
+using AuthFromScratch.Common.Errors;
 using AuthFromScratch.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 
@@ -21,6 +21,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler("/error");
+
 app.MapControllers();
 app.UseHttpsRedirection();
 

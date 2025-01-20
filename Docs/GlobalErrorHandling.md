@@ -27,30 +27,65 @@ public  class  ErrorsController: ControllerBase
 
 Because the **DefaultProblemDetailsFactory** class from **aspnetcore** is sealed and we cannot derive from it we are implementing our own **AuthFromScratchProblemDetailsFactory** which is just the default one but with a slight modification in the **ApplyProblemDetailsDefaults** method.
 ```csharp
-// Add this line to ApplyProblemDetailsDefaults()
-problemDetails.Extensions.Add("customProperty",  "customValue");
+// Add this code to ApplyProblemDetailsDefaults()
+var errors = httpContext?.Items[HttpContextItemKeys.Errors] as List<Error>;
+
+        if (errors is not null)
+        {
+            problemDetails.Extensions.Add("errorCodes", errors.Select(e => e.Code));
+        }
 ```
 Method:
 ```csharp
-private  void  ApplyProblemDetailsDefaults(HttpContext  httpContext, ProblemDetails  problemDetails, int  statusCode)
+private void ApplyProblemDetailsDefaults(HttpContext httpContext, ProblemDetails problemDetails, int statusCode)
+    {
+        problemDetails.Status ??= statusCode;
+
+        if (_options.ClientErrorMapping.TryGetValue(statusCode, out var clientErrorData))
+        {
+            problemDetails.Title ??= clientErrorData.Title;
+            problemDetails.Type ??= clientErrorData.Link;
+        }
+
+        var traceId = Activity.Current?.Id ?? httpContext?.TraceIdentifier;
+        if (traceId != null)
+        {
+            problemDetails.Extensions["traceId"] = traceId;
+        }
+        
+        var errors = httpContext?.Items[HttpContextItemKeys.Errors] as List<Error>;
+
+        if (errors is not null)
+        {
+            problemDetails.Extensions.Add("errorCodes", errors.Select(e => e.Code));
+        }        
+
+        _configure?.Invoke(new() { HttpContext = httpContext!, ProblemDetails = problemDetails });
+    }
+```
+
+## ApiController
+
+We are creating the ApiController class, which derives from the base ControllerBase class. This allows us to implement a consistent error handling system across all our controllers.
+
+```csharp
+[ApiController]
+public class ApiController:ControllerBase
 {
-	problemDetails.Status  ??=  statusCode;
-	
-	if (_options.ClientErrorMapping.TryGetValue(statusCode, out  var  clientErrorData))
-	{	
-		problemDetails.Title  ??=  clientErrorData.Title;
-		problemDetails.Type  ??=  clientErrorData.Link;
-	}	  
+    protected IActionResult Problem(List<Error> errors)
+    {
+        HttpContext.Items[HttpContextItemKeys.Errors] = errors;
+        var firstError = errors[0];
 
-	var  traceId  =  Activity.Current?.Id  ??  httpContext?.TraceIdentifier;
+        var statusCode = firstError.Type switch
+        {
+            ErrorType.Conflict => StatusCodes.Status409Conflict,
+            ErrorType.Validation => StatusCodes.Status400BadRequest,
+            ErrorType.NotFound => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError 
+        };
 
-	if (traceId  !=  null)
-	{
-		problemDetails.Extensions["traceId"] =  traceId;
-	}	  
-	// Adding custom extensions
-	problemDetails.Extensions.Add("customProperty", "customValue");	  
-
-	_configure?.Invoke(new() { HttpContext  =  httpContext!, ProblemDetails  =  problemDetails });
+        return Problem(statusCode: statusCode, title: firstError.Description);
+    }
 }
 ```

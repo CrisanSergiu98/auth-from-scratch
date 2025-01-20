@@ -1,6 +1,8 @@
 using AuthFromScratch.Application.Common.Interfaces.Authentication;
 using AuthFromScratch.Application.Common.Interfaces.Persistence;
+using AuthFromScratch.Domain.Common.Errors;
 using AuthFromScratch.Domain.Entities;
+using ErrorOr;
 
 namespace AuthFromScratch.Application.Authentication;
 
@@ -17,12 +19,12 @@ public class AuthenticationService : IAuthenticationService
         _userRepository = userRepository;
     }    
 
-    public AuthenticationResult Register(string firstName, string lastName, string email, string password)
+    public ErrorOr<AuthenticationResult> Register(string firstName, string lastName, string email, string password)
     {
         // 1. Validate that the email does nto already exist
         if(_userRepository.GetUserByEmail(email) is not null)
         {
-            throw new Exception("User already exists.");
+            return Errors.User.DuplicateEmail;
         }
             
 
@@ -46,19 +48,19 @@ public class AuthenticationService : IAuthenticationService
             token);
     }
 
-    public AuthenticationResult Login(string email, string password)
+    public ErrorOr<AuthenticationResult> Login(string email, string password)
     {       
         // 1. Validate that the user exists.
         if(_userRepository.GetUserByEmail(email) is not User user)
         {
-            throw new Exception("The user with given email does not exist.");
+            return Errors.Authentication.InvalidCredentials;
         }
             
 
         // 2. Validate that the password is correct.
         if(user.Password != password)
         {
-            throw new Exception("Invalid password.");
+            return Errors.Authentication.InvalidCredentials;
         }            
 
         // 3. Create Jwt token.

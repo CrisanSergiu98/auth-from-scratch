@@ -1,13 +1,15 @@
 #nullable enable
 
 using System.Diagnostics;
+using AuthFromScratch.Http;
+using ErrorOr;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
 
-namespace AuthFromScratch.Errors;
+namespace AuthFromScratch.Common.Errors;
 
 public sealed class AuthFromScratchProblemDetailsFactory : ProblemDetailsFactory
 {
@@ -93,8 +95,13 @@ public sealed class AuthFromScratchProblemDetailsFactory : ProblemDetailsFactory
         {
             problemDetails.Extensions["traceId"] = traceId;
         }
+        
+        var errors = httpContext?.Items[HttpContextItemKeys.Errors] as List<Error>;
 
-        problemDetails.Extensions.Add("customProperty", "customValue");
+        if (errors is not null)
+        {
+            problemDetails.Extensions.Add("errorCodes", errors.Select(e => e.Code));
+        }        
 
         _configure?.Invoke(new() { HttpContext = httpContext!, ProblemDetails = problemDetails });
     }
