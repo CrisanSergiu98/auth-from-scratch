@@ -1,29 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
 using AuthFromScratch.Contracts.Authentication;
-using AuthFromScratch.Application.Authentication;
 using ErrorOr;
 using AuthFromScratch.Domain.Common.Errors;
+using AuthFromScratch.Application.Authentication.Common;
+using MediatR;
+using AuthFromScratch.Application.Authentication.Commands.Register;
+using System.Threading.Tasks;
+using AuthFromScratch.Application.Authentication.Queries.Login;
 
 namespace AuthFromScratch.Api.Controllers;
 
 [Route("auth")]
 public class AuthenticationController : ApiController
-{
-    private readonly IAuthenticationService _authenticationService;
-    public AuthenticationController(IAuthenticationService authenticationService)
+{    
+    private readonly ISender _sender;
+    public AuthenticationController(IMediator sender)
     {
-        _authenticationService = authenticationService;
+        _sender = sender;
     }
     
     [HttpPost("register")]
-    public IActionResult Register(RegisterRequest request)
+    public async Task<IActionResult> Register(RegisterRequest request)
     {
-        ErrorOr<AuthenticationResult> authResult = _authenticationService.Register(
-            request.FirstName,
-            request.LastName,
-            request.Email,
-            request.Password
-        );
+        var command = new RegisterCommand(
+            request.FirstName, 
+            request.LastName, 
+            request.Email, 
+            request.Password);
+
+        var authResult = await _sender.Send(command);
 
         return authResult.Match(
             authResult => Ok(MapAuthResult(authResult)),
@@ -31,12 +36,13 @@ public class AuthenticationController : ApiController
     }    
 
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
-        ErrorOr<AuthenticationResult> authResult = _authenticationService.Login(            
+        var query = new LoginQuery(
             request.Email,
-            request.Password
-        );
+            request.Password);
+
+        var authResult = await _sender.Send(query);
 
         if(authResult.IsError && authResult.FirstError == Errors.Authentication.InvalidCredentials)
         {
