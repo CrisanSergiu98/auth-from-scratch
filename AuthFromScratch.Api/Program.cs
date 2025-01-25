@@ -1,17 +1,12 @@
 using AuthFromScratch.Application;
-using AuthFromScratch.Common.Errors;
 using AuthFromScratch.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+using AuthFromScratch.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
-builder.Services.AddControllers();
-
+builder.Services.AddPresentation();
 builder.Services.AddApplication();
 builder.Services.AddInfrastrcture(builder.Configuration);
-
-builder.Services.AddSingleton<ProblemDetailsFactory, AuthFromScratchProblemDetailsFactory>();
 
 var app = builder.Build();
 

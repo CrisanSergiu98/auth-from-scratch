@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
 
-namespace AuthFromScratch.Common.Errors;
+namespace AuthFromScratch.Api.Common.Errors;
 
 public sealed class AuthFromScratchProblemDetailsFactory : ProblemDetailsFactory
 {

@@ -23,6 +23,9 @@ internal sealed class LoginQueryHandler : IRequestHandler<LoginQuery, ErrorOr<Au
 
     public async Task<ErrorOr<AuthenticationResult>> Handle(LoginQuery request, CancellationToken cancellationToken)
     {
+        // Because we are not doing anything async at this time
+        await Task.CompletedTask;
+
         // 1. Validate that the user exists.
         if(_userRepository.GetUserByEmail(request.Email) is not User user)
         {

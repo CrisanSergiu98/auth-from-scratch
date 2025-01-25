@@ -23,6 +23,9 @@ internal sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, 
 
     public async Task<ErrorOr<AuthenticationResult>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        // Because we are not doing anything async at this time
+        await Task.CompletedTask;
+        
         // 1. Validate that the email does nto already exist
         if(_userRepository.GetUserByEmail(request.Email) is not null)
         {
