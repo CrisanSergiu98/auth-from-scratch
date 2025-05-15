@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using AuthFromScratch.Contracts.Authentication;
-using ErrorOr;
 using AuthFromScratch.Domain.Common.Errors;
-using AuthFromScratch.Application.Authentication.Common;
 using MediatR;
 using AuthFromScratch.Application.Authentication.Commands.Register;
-using System.Threading.Tasks;
 using AuthFromScratch.Application.Authentication.Queries.Login;
 using MapsterMapper;
 
